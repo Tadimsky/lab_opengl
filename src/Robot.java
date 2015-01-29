@@ -1,3 +1,4 @@
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import javax.media.opengl.GL2;
 import javax.media.opengl.glu.GLU;
@@ -12,11 +13,17 @@ import framework.Scene;
  * @author Robert C. Duvall
  */
 public class Robot extends Scene {
+
+    public static float clamp(float val, float min, float max) {
+        return Math.max(min, Math.min(max, val));
+    }
+    
     // sections of the robot arm
     private Section[] mySections = {
-        new Section(2.0f),
-        new Section(1.6f),
-        new Section(0.4f)
+        new Section(2.0f, Color.red),
+        new Section(1.6f, Color.cyan),
+        new Section(0.4f, Color.pink), 
+        new Section(0.1f, Color.white)
     };
 
 
@@ -35,6 +42,7 @@ public class Robot extends Scene {
     @Override
     public void display (GL2 gl, GLU glu, GLUT glut) {
         // display each piece of the arm
+        gl.glTranslatef(-1, 0, 0);
         for (Section s : mySections) {
             s.display(gl, glu, glut);
         }
@@ -75,7 +83,9 @@ public class Robot extends Scene {
             mySections[2].turn(-5);
             break;
           case KeyEvent.VK_R:
-            // TODO: add code to reset arm here
+            for (Section s : mySections) {
+                s.reset();
+            }
             break;
         }
     }
@@ -87,23 +97,37 @@ public class Robot extends Scene {
     static class Section {
         private float angle;
         private float length;
+        private float[] myColor;
 
-        public Section (float scale) {
+        public Section (float scale, Color c) {
             length = scale;
+            myColor = c.getRGBComponents(null);
             reset();
         }
 
-        public void turn (float degrees) {
+        public void turn (float degrees) {            
             angle += degrees;
+            angle = clamp(angle, 0, 135);
         }
 
         public void reset () {
             angle = 0;
         }
 
-        private void display (GL2 gl, GLU glu, GLUT glut) {
-            // TODO: rotate this section both locally, (affecting only this section)
-            //       and globally (affecting future sections)
+        private void display (GL2 gl, GLU glu, GLUT glut) {            
+            gl.glRotatef(angle,0,0,1);
+            gl.glTranslatef(0, -0.5f, 0);
+            gl.glTranslatef(length / 2, 0, 0);
+            gl.glPushMatrix();
+            {
+                gl.glColor4fv(myColor, 0);
+                //gl.glTranslatef(0, 0.5f, 0);
+                gl.glScalef(length, 1, 1);
+                glut.glutSolidCube(1);
+            }
+            gl.glPopMatrix();
+            gl.glTranslatef(0, 0.5f, 0);
+            gl.glTranslatef(length /2, 0,0);
         }
     }
 
